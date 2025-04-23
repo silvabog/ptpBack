@@ -124,8 +124,6 @@ app.post('/books', authenticateToken, async (req, res) => {
 
 
 
-
-
 // Get list of books
 app.get('/books', async (req, res) => {
     try {
