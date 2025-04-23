@@ -105,12 +105,16 @@ app.get('/profile', verifyToken, async (req, res) => {
 });
 
 // Book listing route (for authenticated users)
+// Book listing route (for authenticated users)
 app.post('/books', async (req, res) => {
     try {
         const { title, author, subject, condition, description } = req.body;
+        const owner_user_id = req.user.user_id; // Assuming you have a way to get the logged-in user ID (e.g., via JWT)
+
+        // Insert the book into the database, including the owner_user_id
         const newBook = await pool.query(
-            "INSERT INTO books (title, author, subject, condition, description) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [title, author, subject, condition, description]
+            "INSERT INTO books (title, author, subject, condition, description, owner_user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [title, author, subject, condition, description, owner_user_id]
         );
 
         // Send a success response with the added book details
@@ -127,16 +131,19 @@ app.post('/books', async (req, res) => {
 
 
 
+
 // Get list of books
 app.get('/books', async (req, res) => {
     try {
+        // Query books along with the owner_user_id
         const result = await pool.query('SELECT * FROM books WHERE is_available = TRUE');
-        res.json(result.rows);
+        res.json(result.rows);  // Sends the books along with owner_user_id
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
 
 // Start the server
 app.listen(port, () => {
