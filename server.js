@@ -191,7 +191,6 @@ app.get('/messages', verifyToken, async (req, res) => {
     }
 });
 
-
 // Fetch all users except the current user
 app.get('/users', verifyToken, async (req, res) => {
     try {
