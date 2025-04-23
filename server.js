@@ -151,7 +151,6 @@ app.listen(port, () => {
 });
 
 // Send a message
-
 app.post('/messages', verifyToken, async (req, res) => {
     const { receiver_user_id, message } = req.body;
     const sender_user_id = req.user.user_id; // Get sender's ID from the JWT token
@@ -176,7 +175,6 @@ app.post('/messages', verifyToken, async (req, res) => {
 
 
 
-// Get messages between two users
 // Get messages between two users
 app.get('/messages', verifyToken, async (req, res) => {
     const { other_user_id } = req.query;
