@@ -144,53 +144,44 @@ app.listen(port, () => {
 });
 
 // Send a message
-
-app.post('/messages', verifyToken, async (req, res) => {
-    const { receiver_user_id, message } = req.body;
-    const sender_user_id = req.user.user_id; // Get sender's ID from the JWT token
-
+app.post('/messages', async (req, res) => {
     try {
-        // Insert the message into the database
-        const result = await pool.query(
+        const { sender_user_id, receiver_user_id, message } = req.body;
+
+        const newMessage = await pool.query(
             "INSERT INTO messages (sender_user_id, receiver_user_id, message) VALUES ($1, $2, $3) RETURNING *",
             [sender_user_id, receiver_user_id, message]
         );
-        
-        // Return success message with the new message details
+
         res.status(201).json({ 
             message: "Message sent successfully!", 
-            sentMessage: result.rows[0] 
+            data: newMessage.rows[0] 
         });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to send message.' });
+        console.error(err.message);
+        res.status(500).json({ message: "Failed to send message." });
     }
 });
 
 
-
-// Get messages between two users
-app.get('/messages', verifyToken, async (req, res) => {
-    const { other_user_id } = req.query;
-    const current_user_id = req.user.user_id; // Get sender's ID from the JWT token
-
+// Fetch messages for a user
+app.get('/messages/:userId', async (req, res) => {
     try {
-        // Fetch messages where the sender and receiver match either combination
-        const result = await pool.query(
-            `SELECT * FROM messages WHERE 
-                (sender_user_id = $1 AND receiver_user_id = $2) 
-                OR (sender_user_id = $2 AND receiver_user_id = $1)
-            ORDER BY sent_at`,
-            [current_user_id, other_user_id]
+        const { userId } = req.params;
+
+        const messages = await pool.query(
+            "SELECT * FROM messages WHERE sender_user_id = $1 OR receiver_user_id = $1 ORDER BY sent_at DESC",
+            [userId]
         );
 
-        res.json(result.rows);
+        res.json(messages.rows);
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to retrieve messages.' });
+        console.error(err.message);
+        res.status(500).json({ message: "Failed to retrieve messages." });
     }
 });
-
 
 
 
