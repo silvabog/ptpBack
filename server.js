@@ -105,7 +105,7 @@ app.get('/profile', verifyToken, async (req, res) => {
 });
 
 // Book listing route (for authenticated users)
-app.post('/books', authenticateToken, async (req, res) => {
+app.post('/books', async (req, res) => {
     try {
         const { title, author, subject, condition, description } = req.body;
         const owner_user_id = req.user.user_id;
