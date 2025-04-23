@@ -170,14 +170,18 @@ app.post('/messages', verifyToken, async (req, res) => {
 
 
 // Get messages between two users
+// Get messages between two users
 app.get('/messages', verifyToken, async (req, res) => {
     const { other_user_id } = req.query;
     const current_user_id = req.user.user_id; // Get sender's ID from the JWT token
 
     try {
-        // Fetch messages where the sender and receiver match either combination
+        // Fetch messages where the sender and receiver match either combination, and include sender username
         const result = await pool.query(
-            `SELECT * FROM messages WHERE 
+            `SELECT messages.*, users.username AS sender_username
+            FROM messages
+            JOIN users ON users.user_id = messages.sender_user_id
+            WHERE 
                 (sender_user_id = $1 AND receiver_user_id = $2) 
                 OR (sender_user_id = $2 AND receiver_user_id = $1)
             ORDER BY sent_at`,
@@ -191,6 +195,24 @@ app.get('/messages', verifyToken, async (req, res) => {
     }
 });
 
+
+// Fetch all users except the current user
+app.get('/users', verifyToken, async (req, res) => {
+    try {
+        const { user_id } = req.user;
+
+        // Query all users except the current one, return user_id and username
+        const result = await pool.query(
+            'SELECT user_id, username FROM users WHERE user_id != $1',
+            [user_id]
+        );
+        
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Failed to fetch users." });
+    }
+});
 
 
 
@@ -230,21 +252,5 @@ app.get('/transactions/:userId', async (req, res) => {
     }
 });
 
-// Fetch all users except the current user
-app.get('/users', verifyToken, async (req, res) => {
-    try {
-        const { user_id } = req.user;
 
-        // Query all users except the current one, return user_id and username
-        const result = await pool.query(
-            'SELECT user_id, username FROM users WHERE user_id != $1',
-            [user_id]
-        );
-        
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ message: "Failed to fetch users." });
-    }
-});
 
