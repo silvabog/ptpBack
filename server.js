@@ -107,16 +107,16 @@ app.get('/profile', verifyToken, async (req, res) => {
 // Book listing route (for authenticated users)
 app.post('/books', async (req, res) => {
     try {
-        const { title, author, subject, condition, description } = req.body;
+        const { title, author, subject, condition, description, user_id } = req.body;
+
         const newBook = await pool.query(
-            "INSERT INTO books (title, author, subject, condition, description) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [title, author, subject, condition, description]
+            "INSERT INTO books (title, author, subject, condition, description, owner_user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [title, author, subject, condition, description, user_id]
         );
 
-        // Send a success response with the added book details
-        res.status(201).json({ 
-            message: "Book added successfully!", 
-            book: newBook.rows[0] 
+        res.status(201).json({
+            message: "Book added successfully!",
+            book: newBook.rows[0]
         });
 
     } catch (err) {
@@ -124,6 +124,7 @@ app.post('/books', async (req, res) => {
         res.status(500).json({ message: "Server error. Failed to add book." });
     }
 });
+
 
 
 
