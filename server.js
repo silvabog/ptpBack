@@ -108,17 +108,17 @@ app.get('/profile', verifyToken, async (req, res) => {
 app.post('/books', async (req, res) => {
     try {
         const { title, author, subject, condition, description } = req.body;
-        const owner_user_id = req.user.user_id;
-
         const newBook = await pool.query(
-            "INSERT INTO books (title, author, subject, condition, description, owner_user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [title, author, subject, condition, description, owner_user_id]
+            "INSERT INTO books (title, author, subject, condition, description) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            [title, author, subject, condition, description]
         );
 
+        // Send a success response with the added book details
         res.status(201).json({ 
             message: "Book added successfully!", 
             book: newBook.rows[0] 
         });
+
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: "Server error. Failed to add book." });
@@ -127,20 +127,16 @@ app.post('/books', async (req, res) => {
 
 
 
-
-
 // Get list of books
 app.get('/books', async (req, res) => {
     try {
-        // Query books along with the owner_user_id
         const result = await pool.query('SELECT * FROM books WHERE is_available = TRUE');
-        res.json(result.rows);  // Sends the books along with owner_user_id
+        res.json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
-
 
 // Start the server
 app.listen(port, () => {
@@ -148,6 +144,7 @@ app.listen(port, () => {
 });
 
 // Send a message
+
 app.post('/messages', verifyToken, async (req, res) => {
     const { receiver_user_id, message } = req.body;
     const sender_user_id = req.user.user_id; // Get sender's ID from the JWT token
@@ -172,6 +169,7 @@ app.post('/messages', verifyToken, async (req, res) => {
 
 
 
+// Get messages between two users
 // Get messages between two users
 app.get('/messages', verifyToken, async (req, res) => {
     const { other_user_id } = req.query;
