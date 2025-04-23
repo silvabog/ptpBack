@@ -146,11 +146,11 @@ app.listen(port, () => {
 // Send a message
 app.post('/messages', async (req, res) => {
     try {
-        const { sender_id, receiver_id, content } = req.body;
+        const { sender_user_id, receiver_user_id, message } = req.body;
 
         const newMessage = await pool.query(
-            "INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3) RETURNING *",
-            [sender_id, receiver_id, content]
+            "INSERT INTO messages (sender_user_id, receiver_user_id, message) VALUES ($1, $2, $3) RETURNING *",
+            [sender_user_id, receiver_user_id, message]
         );
 
         res.status(201).json({ 
@@ -164,13 +164,14 @@ app.post('/messages', async (req, res) => {
     }
 });
 
+
 // Fetch messages for a user
 app.get('/messages/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
 
         const messages = await pool.query(
-            "SELECT * FROM messages WHERE sender_id = $1 OR receiver_id = $1 ORDER BY timestamp DESC",
+            "SELECT * FROM messages WHERE sender_user_id = $1 OR receiver_user_id = $1 ORDER BY sent_at DESC",
             [userId]
         );
 
@@ -181,6 +182,7 @@ app.get('/messages/:userId', async (req, res) => {
         res.status(500).json({ message: "Failed to retrieve messages." });
     }
 });
+
 
 
 // Make a transaction (tip/donation)
