@@ -144,15 +144,9 @@ app.listen(port, () => {
 });
 
 // Send a message
-// Send a message
-app.post('/messages', verifyToken, async (req, res) => {
+app.post('/messages', async (req, res) => {
     try {
-        const { receiver_user_id, message } = req.body;
-        const sender_user_id = req.user.user_id;
-
-        if (!receiver_user_id || !message) {
-            return res.status(400).json({ message: 'receiver_user_id and message are required.' });
-        }
+        const { sender_user_id, receiver_user_id, message } = req.body;
 
         const newMessage = await pool.query(
             "INSERT INTO messages (sender_user_id, receiver_user_id, message) VALUES ($1, $2, $3) RETURNING *",
@@ -170,32 +164,32 @@ app.post('/messages', verifyToken, async (req, res) => {
     }
 });
 
-// Fetch messages with another user (chat history)
-app.get('/messages/with/:otherUserId', verifyToken, async (req, res) => {
+
+// Fetch messages for a user
+app.get('/messages/:userId', async (req, res) => {
     try {
-        const userId = req.user.user_id;
-        const { otherUserId } = req.params;
+        const { userId } = req.params;
 
         const messages = await pool.query(
-            `SELECT * FROM messages 
-             WHERE (sender_user_id = $1 AND receiver_user_id = $2)
-                OR (sender_user_id = $2 AND receiver_user_id = $1)
-             ORDER BY sent_at ASC`,
-            [userId, otherUserId]
+            "SELECT * FROM messages WHERE sender_user_id = $1 OR receiver_user_id = $1 ORDER BY sent_at DESC",
+            [userId]
         );
 
         res.json(messages.rows);
+
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: "Failed to retrieve messages." });
     }
 });
 
+
+
 // Make a transaction (tip/donation)
 app.post('/transactions', verifyToken, async (req, res) => {
     try {
         const { receiver_id, book_id, amount } = req.body;
-        const sender_id = req.user.user_id;
+        const sender_id = req.user.user_id; // Authenticated user
 
         const newTransaction = await pool.query(
             "INSERT INTO transactions (sender_id, receiver_id, book_id, amount) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -232,9 +226,10 @@ app.get('/users', verifyToken, async (req, res) => {
     try {
         const { user_id } = req.user;
 
-        const result = await pool.query('SELECT user_id, username FROM users WHERE user_id != $1', [user_id]);
+        // Query the database to get all users except the current one
+        const result = await pool.query('SELECT username FROM users WHERE user_id != $1', [user_id]);
         
-        res.json(result.rows);
+        res.json(result.rows);  // Send back a list of usernames
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: "Failed to fetch users." });
