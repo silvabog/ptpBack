@@ -108,19 +108,25 @@ app.get('/profile', verifyToken, async (req, res) => {
 app.post('/books', authenticateToken, async (req, res) => {
     try {
         const { title, author, subject, condition, description } = req.body;
-        const userId = req.user.user_id; // comes from token after auth middleware
+        const owner_user_id = req.user.user_id;
 
         const newBook = await pool.query(
             "INSERT INTO books (title, author, subject, condition, description, owner_user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [title, author, subject, condition, description, userId]
+            [title, author, subject, condition, description, owner_user_id]
         );
 
-        res.status(201).json({ message: "Book added successfully!", book: newBook.rows[0] });
+        res.status(201).json({ 
+            message: "Book added successfully!", 
+            book: newBook.rows[0] 
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: "Server error. Failed to add book." });
     }
 });
+
+
+
 
 
 // Get list of books
@@ -190,6 +196,7 @@ app.get('/messages', verifyToken, async (req, res) => {
         res.status(500).json({ message: 'Failed to retrieve messages.' });
     }
 });
+
 
 // Fetch all users except the current user
 app.get('/users', verifyToken, async (req, res) => {
