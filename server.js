@@ -105,29 +105,23 @@ app.get('/profile', verifyToken, async (req, res) => {
 });
 
 // Book listing route (for authenticated users)
-// Book listing route (for authenticated users)
-app.post('/books', async (req, res) => {
+app.post('/books', authenticateToken, async (req, res) => {
     try {
         const { title, author, subject, condition, description } = req.body;
-        const owner_user_id = req.user.user_id; // Assuming you have a way to get the logged-in user ID (e.g., via JWT)
+        const userId = req.user.user_id; // comes from token after auth middleware
 
-        // Insert the book into the database, including the owner_user_id
         const newBook = await pool.query(
             "INSERT INTO books (title, author, subject, condition, description, owner_user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [title, author, subject, condition, description, owner_user_id]
+            [title, author, subject, condition, description, userId]
         );
 
-        // Send a success response with the added book details
-        res.status(201).json({ 
-            message: "Book added successfully!", 
-            book: newBook.rows[0] 
-        });
-
+        res.status(201).json({ message: "Book added successfully!", book: newBook.rows[0] });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: "Server error. Failed to add book." });
     }
 });
+
 
 
 
