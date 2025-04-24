@@ -110,6 +110,34 @@ app.get('/profile', verifyToken, async (req, res) => {
     }
 });
 
+// Update user profile
+app.put('/profile', verifyToken, async (req, res) => {
+    const { first_name, last_name, username, email, bio } = req.body;
+    const userId = req.user.user_id;
+
+    try {
+        const result = await pool.query(
+            `UPDATE users 
+             SET first_name = $1, last_name = $2, username = $3, email = $4, bio = $5
+             WHERE user_id = $6 RETURNING *`,
+            [first_name, last_name, username, email, bio, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: result.rows[0]
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to update profile' });
+    }
+});
+
+
 // Book listing route (for authenticated users)
 app.post('/books', verifyToken, async (req, res) => {
     try {
