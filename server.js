@@ -290,4 +290,31 @@ app.get('/transactions/:userId', async (req, res) => {
 });
 
 
+// Wishlist POST Route
+app.post('/api/wishlist', async (req, res) => {
+    try {
+        const { user_id, book_id } = req.body;
+
+        if (!user_id || !book_id) {
+            return res.status(400).json({ error: "Missing user_id or book_id" });
+        }
+
+        // Insert into wishlist table
+        const result = await pool.query(
+            `INSERT INTO wishlist (user_id, book_id) VALUES ($1, $2) RETURNING *`,
+            [user_id, book_id]
+        );
+
+        res.status(201).json({ message: "Book added to wishlist", wishlist: result.rows[0] });
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+
+        if (error.code === '23505') {
+            // 23505 = unique_violation in PostgreSQL
+            return res.status(409).json({ error: "Book already in wishlist" });
+        }
+
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
