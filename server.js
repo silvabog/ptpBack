@@ -289,56 +289,28 @@ app.get('/transactions/:userId', async (req, res) => {
     }
 });
 
+// Delete a book listing (only the owner can delete)
+app.delete('/books/:bookId', verifyToken, async (req, res) => {
+    const { bookId } = req.params;
+    const userId = req.user.user_id; // Get the user ID from the JWT token
 
-// Wishlist POST Route
-app.post('/wishlist', async (req, res) => {
     try {
-        const { user_id, book_id } = req.body;
-
-        if (!user_id || !book_id) {
-            return res.status(400).json({ error: "Missing user_id or book_id" });
-        }
-
-        // Insert into wishlist table
+        // Check if the book exists and is owned by the logged-in user
         const result = await pool.query(
-            `INSERT INTO wishlist (user_id, book_id) VALUES ($1, $2) RETURNING *`,
-            [user_id, book_id]
+            'SELECT * FROM books WHERE book_id = $1 AND owner_user_id = $2',
+            [bookId, userId]
         );
 
-        res.status(201).json({ message: "Book added to wishlist", wishlist: result.rows[0] });
-    } catch (error) {
-        console.error('Error adding to wishlist:', error);
-
-        if (error.code === '23505') {
-            // 23505 = unique_violation in PostgreSQL
-            return res.status(409).json({ error: "Book already in wishlist" });
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Book not found or you do not have permission to delete this book.' });
         }
 
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
+        // Delete the book
+        await pool.query('DELETE FROM books WHERE book_id = $1', [bookId]);
 
-// Wishlist GET Route (to fetch the user's wishlist)
-app.get('/wishlist/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-
-        // Fetch books from the wishlist for the user
-        const result = await pool.query(
-            `SELECT books.book_id, books.title, books.author, books.subject, books.condition 
-            FROM wishlist
-            JOIN books ON wishlist.book_id = books.book_id
-            WHERE wishlist.user_id = $1`,
-            [userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "No books found in wishlist" });
-        }
-
-        res.status(200).json(result.rows); // Return the books in the wishlist
-    } catch (error) {
-        console.error('Error fetching wishlist:', error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.json({ message: 'Book deleted successfully.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to delete book.' });
     }
 });
