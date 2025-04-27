@@ -291,7 +291,7 @@ app.get('/transactions/:userId', async (req, res) => {
 
 
 // Wishlist POST Route
-app.post('/api/wishlist', async (req, res) => {
+app.post('/wishlist', async (req, res) => {
     try {
         const { user_id, book_id } = req.body;
 
@@ -319,7 +319,7 @@ app.post('/api/wishlist', async (req, res) => {
 });
 
 // Wishlist GET Route (to fetch the user's wishlist)
-app.get('/api/wishlist/:userId', async (req, res) => {
+app.get('/wishlist/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
 
