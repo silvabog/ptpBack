@@ -318,3 +318,27 @@ app.post('/api/wishlist', async (req, res) => {
     }
 });
 
+// Wishlist GET Route (to fetch the user's wishlist)
+app.get('/api/wishlist/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Fetch books from the wishlist for the user
+        const result = await pool.query(
+            `SELECT books.book_id, books.title, books.author, books.subject, books.condition 
+            FROM wishlist
+            JOIN books ON wishlist.book_id = books.book_id
+            WHERE wishlist.user_id = $1`,
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "No books found in wishlist" });
+        }
+
+        res.status(200).json(result.rows); // Return the books in the wishlist
+    } catch (error) {
+        console.error('Error fetching wishlist:', error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
